@@ -8,14 +8,3 @@ export const log = (...args: any[]) => {
 
   console.log(`[${time}]`, ...args);
 };
-
-export const getAbi = (arch: string) => {
-  const abis = new Map([
-    ['arm64', 'arm64-v8a'],
-    ['arm', 'armeabi-v7a'],
-    ['x86', 'x86'],
-    ['x64', 'x86_64'],
-  ]);
-
-  return abis.get(arch);
-};
