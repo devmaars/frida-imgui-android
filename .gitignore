@@ -1,0 +1,8 @@
+/node_modules
+/.vscode
+/dist
+/tmp
+
+!/build/*/
+/build/*/*
+!/build/*/*.so

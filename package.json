@@ -1,0 +1,29 @@
+{
+  "name": "frida-imgui-android",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "frida-compile src/index.ts -o dist/agent.js -w",
+    "build": "frida-compile src/index.ts -o dist/agent.js -c",
+    "spawn": "frida -U -l dist/agent.js -f com.akpublish.zombie --kill-on-exit -o tmp/frida.log"
+  },
+  "prettier": {
+    "printWidth": 120,
+    "tabWidth": 2,
+    "useTabs": false,
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "all",
+    "bracketSpacing": true,
+    "arrowParens": "always",
+    "endOfLine": "lf"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/frida-gum": "^18.7.0",
+    "frida-compile": "^16.4.1",
+    "typescript": "^5.4.5"
+  }
+}
