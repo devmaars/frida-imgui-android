@@ -6,7 +6,7 @@
 #include "imgui_impl_opengl3.h"
 #include <stdexcept>
 #include <EGL/egl.h>
-#include <android_native_app_glue.h>
+// #include <android_native_app_glue.h>
 #include <GLES3/gl3.h>
 
 #define LOG_TAG "ImGuiWrapper"
@@ -99,6 +99,13 @@ extern "C"
 
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
+
+        ImGuiIO &io = ImGui::GetIO();
+        io.IniFilename = nullptr;
+
+        LOGD("ImGui version: %s", IMGUI_VERSION);
+        LOGD("Display size: %f, %f", io.DisplaySize.x, io.DisplaySize.y);
+
         ImGui::StyleColorsDark();
 
         if (!ImGui_ImplAndroid_Init(window) || !ImGui_ImplOpenGL3_Init("#version 300 es"))
@@ -106,10 +113,14 @@ extern "C"
             LOGE("ImGui_ImplAndroid_Init or ImGui_ImplOpenGL3_Init failed");
             return;
         }
+
+        LOGD("ImGui initialized successfully");
     }
 
     JNIEXPORT void JNICALL Java_me_maars_MyGLRenderer_nativeOnDrawFrame(JNIEnv *env, jobject thiz)
     {
+        LOGD("nativeOnDrawFrame called");
+
         if (g_EglDisplay == EGL_NO_DISPLAY)
         {
             LOGD("g_EglDisplay is EGL_NO_DISPLAY");
@@ -130,11 +141,11 @@ extern "C"
         ImGui::End();
 
         ImGui::Render();
-        glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-        glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-        glClear(GL_COLOR_BUFFER_BIT);
+        // glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+        // glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+        // glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        eglSwapBuffers(g_EglDisplay, g_EglSurface);
+        // eglSwapBuffers(g_EglDisplay, g_EglSurface);
     }
 
     JNIEXPORT void JNICALL Java_me_maars_MyGLRenderer_nativeOnSurfaceChanged(JNIEnv *env, jobject thiz, jint width, jint height)
