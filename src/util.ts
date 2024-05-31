@@ -1,4 +1,4 @@
-export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+export const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 export const log = (...args: any[]) => {
   const date = new Date();
