@@ -6,11 +6,15 @@ This is a work in progress project to create a simple IMGUI for Android using Fr
 
 ## Build IMGUI
 
-You must have the Android NDK installed and set up the PATH in the `build.sh` script.
+You must have the Android NDK, android build tools and cmake installed. And set up the all the environment variables in the `Makefile`.
 
 ```bash
-./build.sh
+make lib # to build the library
+make java # to build the java wrapper
+make all # to build both
 ```
+
+The project build system and dependencies are changing fast so this README might not be up to date. Please refer to the `Makefile` for the most up to date information.
 
 You can also find the pre-built library in the `build` folder.
 
@@ -39,3 +43,6 @@ Feel free to contribute to this project. I will be happy to accept pull requests
 ## License
 
 This project follow any rule set by the original IMGUI project.
+
+# TODO:
+- [x] For some reason the imgui window is not showing up. Need to investigate.
