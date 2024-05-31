@@ -1,18 +1,22 @@
-# Set the NDK path, adjust if necessary
+# Android SDK and NDK settings
+ANDROID_SDK_HOME := $(HOME)/Android/Sdk
+ANDROID_NDK_HOME := $(ANDROID_SDK_HOME)/ndk/21.4.7075529
+ANDROID_BUILD_TOOLS_VERSION := 30.0.3
+ANDROID_PLATFORM_VERSION := android-30
+ANDROID_PLATFORM := $(ANDROID_SDK_HOME)/platforms/$(ANDROID_PLATFORM_VERSION)/android.jar
+BUILD_TOOLS := $(ANDROID_SDK_HOME)/build-tools/$(ANDROID_BUILD_TOOLS_VERSION)
+CMAKE_TOOLCHAIN := $(ANDROID_NDK_HOME)/build/cmake/android.toolchain.cmake
 
-DEXFILE=renderer.dex
+# Source and build directories
 SOURCE_DIR := src
 TEMP_DIR := temp
 BUILD_DIR := build
-
-ANDROID_NDK_HOME := $(HOME)/Android/Sdk/ndk/21.4.7075529
-ANDROID_PLATFORM := $(HOME)/Android/Sdk/platforms/android-30/android.jar
-BUILD_TOOLS := $(HOME)/Android/Sdk/build-tools/30.0.3
-CMAKE_TOOLCHAIN := $(ANDROID_NDK_HOME)/build/cmake/android.toolchain.cmake
-
 JAVA_SRC_DIR := $(SOURCE_DIR)/java/me/maars
 JAVA_TEMP_DIR := $(TEMP_DIR)/me/maars
-JAVA_OUT_DIR := $(BUILD_DIR)/dexfile
+JAVA_OUT_DIR := $(BUILD_DIR)/java
+
+# Output file
+DEXFILE := renderer.dex
 
 # List of target architectures
 ARCHS := armeabi-v7a arm64-v8a
@@ -22,34 +26,18 @@ build:
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(JAVA_OUT_DIR)
 
-# Build rule for native library
+# Build rules
 lib: build
-	@for ARCH in $(ARCHS); do \
-		mkdir -p build/$$ARCH; \
-		cd build/$$ARCH; \
-		cmake -DCMAKE_TOOLCHAIN_FILE=$(CMAKE_TOOLCHAIN) \
-		  -DANDROID_ABI=$$ARCH \
-		  -DANDROID_PLATFORM=android-30 \
-		  ../..; \
-		cmake --build .; \
-		if [ $$? -ne 0 ]; then \
-			echo "Error building for $$ARCH"; \
-			exit 1; \
-		fi; \
-		cd ../..; \
-	done
+	ARCHS="$(ARCHS)" BUILD_DIR="$(BUILD_DIR)" CMAKE_TOOLCHAIN="$(CMAKE_TOOLCHAIN)" ANDROID_PLATFORM_VERSION="$(ANDROID_PLATFORM_VERSION)" $(shell pwd)/build.sh lib
 
-# Build rule for Java
 java: build
-	javac -source 11 -target 11 -classpath $(ANDROID_PLATFORM) -d temp $(JAVA_SRC_DIR)/RendererWrapper.java
-	mv $(JAVA_TEMP_DIR)/RendererWrapper.class $(JAVA_OUT_DIR)/RendererWrapper.class
-	$(BUILD_TOOLS)/d8 $(JAVA_OUT_DIR)/RendererWrapper.class --output $(JAVA_OUT_DIR)/
-	mv $(JAVA_OUT_DIR)/classes.dex $(JAVA_OUT_DIR)/$(DEXFILE)
+	ANDROID_PLATFORM="$(ANDROID_PLATFORM)" JAVA_TEMP_DIR="$(JAVA_TEMP_DIR)" JAVA_SRC_DIR="$(JAVA_SRC_DIR)" JAVA_OUT_DIR="$(JAVA_OUT_DIR)" BUILD_TOOLS="$(BUILD_TOOLS)" DEXFILE="$(DEXFILE)" $(shell pwd)/build.sh java
 
-all: build lib java
+all: build
+	ARCHS="$(ARCHS)" BUILD_DIR="$(BUILD_DIR)" CMAKE_TOOLCHAIN="$(CMAKE_TOOLCHAIN)" ANDROID_PLATFORM_VERSION="$(ANDROID_PLATFORM_VERSION)" ANDROID_PLATFORM="$(ANDROID_PLATFORM)" JAVA_TEMP_DIR="$(JAVA_TEMP_DIR)" JAVA_SRC_DIR="$(JAVA_SRC_DIR)" JAVA_OUT_DIR="$(JAVA_OUT_DIR)" BUILD_TOOLS="$(BUILD_TOOLS)" DEXFILE="$(DEXFILE)" $(shell pwd)/build.sh all
 
 # Clean rule to remove the build directory
 clean:
-	rm -rf build
+	rm -rf $(BUILD_DIR) $(TEMP_DIR)
 
 .PHONY: build lib java clean

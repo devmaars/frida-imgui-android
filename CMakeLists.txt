@@ -30,5 +30,6 @@ target_include_directories(imgui PUBLIC
 find_library(log-lib log)
 find_library(android-lib android)
 find_library(GLESv3-lib GLESv3)
+find_library(EGL-lib EGL)
 
-target_link_libraries(imgui ${log-lib} ${android-lib} ${GLESv3-lib})
+target_link_libraries(imgui ${log-lib} ${android-lib} ${GLESv3-lib} ${EGL-lib})
