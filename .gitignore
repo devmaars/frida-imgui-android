@@ -7,5 +7,5 @@
 /build/*/*
 !/build/*/*.so
 
-!/build/dexfile/*.dex
-# *.class
+!/build/java/*.dex
+!/build/java/*.class
