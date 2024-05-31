@@ -1,4 +1,3 @@
-// import './RendererWrapper.js';
 import { log, sleep } from './util.js';
 
 console.log("Script loaded successfully 🚀")
@@ -11,22 +10,25 @@ Java.perform(() => {
 });
 
 async function main() {
-  // await sleep(2000);
   Java.openClassFile(RENDERER_DEX_PATH).load();
 
-  const Log = Java.use('android.util.Log');
   const Activity = Java.use('android.app.Activity');
-  // const GLSurfaceView = Java.use('android.opengl.GLSurfaceView');
   const MyGLSurfaceView = Java.use('me.maars.MyGLSurfaceView');
 
   console.log(MyGLSurfaceView)
 
   let rendererSet = false;
-  let glSurfaceView: Java.Wrapper;
+  let glSurfaceView;
 
   Activity.onCreate.overload('android.os.Bundle').implementation = function (savedInstanceState: Java.Wrapper) {
     log('Activity.onCreate()');
     this.onCreate(savedInstanceState);
+
+    // Check OpenGL ES version before creating GLSurfaceView
+    if (!supportsOpenGLES3()) {
+      console.error("This device does not support OpenGL ES 3.0");
+      return;
+    }
 
     glSurfaceView = MyGLSurfaceView.$new(this);
     glSurfaceView = Java.retain(glSurfaceView);
@@ -38,4 +40,20 @@ async function main() {
 
     rendererSet = true;
   };
+
+  Activity.onResume.implementation = function () {
+    log('Activity.onResume()');
+    this.onResume();
+  }
+
+  Activity.onPause.implementation = function () {
+    log('Activity.onPause()');
+    this.onPause();
+  }
+
+  // Function to check if the device supports OpenGL ES 3.0
+  function supportsOpenGLES3() {
+    const GLES30 = Java.use('android.opengl.GLES30');
+    return GLES30.$new() !== null;
+  }
 }

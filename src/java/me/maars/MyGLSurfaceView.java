@@ -24,24 +24,26 @@ public class MyGLSurfaceView extends GLSurfaceView {
         Log.d(TAG, "MyGLSurfaceView constructor");
 
         setEGLContextClientVersion(3);
-
         renderer = new MyGLRenderer();
         setRenderer(renderer);
+        setRenderMode(RENDERMODE_CONTINUOUSLY); // Ensure continuous rendering
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
+        super.surfaceCreated(holder);
+
         Log.d(TAG, "surfaceCreated");
 
-        super.surfaceCreated(holder);
         nativeSurfaceCreated(holder.getSurface());
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
+        super.surfaceDestroyed(holder);
+
         Log.d(TAG, "surfaceDestroyed");
 
-        super.surfaceDestroyed(holder);
         nativeSurfaceDestroyed();
     }
 

@@ -7,5 +7,3 @@ adb push $DEX /data/local/tmp
 
 adb shell chmod 777 /data/local/tmp/libimgui.so
 adb shell chmod 777 /data/local/tmp/renderer.dex
-
-adb shell setenforce 0

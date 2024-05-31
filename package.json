@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "frida-compile src/index.ts -o dist/agent.js -w",
     "build": "frida-compile src/index.ts -o dist/agent.js -c",
-    "spawn": "frida -U -l dist/agent.js -f com.akpublish.zombie --kill-on-exit -o temp/frida.log"
+    "spawn": "frida -U -l dist/agent.js -f com.kiloo.subwaysurf --kill-on-exit -o temp/frida.log"
   },
   "prettier": {
     "printWidth": 120,

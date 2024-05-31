@@ -1,0 +1,42 @@
+[
+{
+  "directory": "/home/maars/Code/cpp/frida-imgui-android/build",
+  "command": "/usr/bin/c++ -Dimgui_EXPORTS -I/home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui -I\"/sysroot/usr/include/*\" -I/sources/android/native_app_glue -g -fPIC -std=c++11 -o CMakeFiles/imgui.dir/src/cpp/imgui/imgui.cpp.o -c /home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui/imgui.cpp",
+  "file": "/home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui/imgui.cpp"
+},
+{
+  "directory": "/home/maars/Code/cpp/frida-imgui-android/build",
+  "command": "/usr/bin/c++ -Dimgui_EXPORTS -I/home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui -I\"/sysroot/usr/include/*\" -I/sources/android/native_app_glue -g -fPIC -std=c++11 -o CMakeFiles/imgui.dir/src/cpp/imgui/imgui_demo.cpp.o -c /home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui/imgui_demo.cpp",
+  "file": "/home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui/imgui_demo.cpp"
+},
+{
+  "directory": "/home/maars/Code/cpp/frida-imgui-android/build",
+  "command": "/usr/bin/c++ -Dimgui_EXPORTS -I/home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui -I\"/sysroot/usr/include/*\" -I/sources/android/native_app_glue -g -fPIC -std=c++11 -o CMakeFiles/imgui.dir/src/cpp/imgui/imgui_draw.cpp.o -c /home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui/imgui_draw.cpp",
+  "file": "/home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui/imgui_draw.cpp"
+},
+{
+  "directory": "/home/maars/Code/cpp/frida-imgui-android/build",
+  "command": "/usr/bin/c++ -Dimgui_EXPORTS -I/home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui -I\"/sysroot/usr/include/*\" -I/sources/android/native_app_glue -g -fPIC -std=c++11 -o CMakeFiles/imgui.dir/src/cpp/imgui/imgui_impl_android.cpp.o -c /home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui/imgui_impl_android.cpp",
+  "file": "/home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui/imgui_impl_android.cpp"
+},
+{
+  "directory": "/home/maars/Code/cpp/frida-imgui-android/build",
+  "command": "/usr/bin/c++ -Dimgui_EXPORTS -I/home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui -I\"/sysroot/usr/include/*\" -I/sources/android/native_app_glue -g -fPIC -std=c++11 -o CMakeFiles/imgui.dir/src/cpp/imgui/imgui_impl_opengl3.cpp.o -c /home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui/imgui_impl_opengl3.cpp",
+  "file": "/home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui/imgui_impl_opengl3.cpp"
+},
+{
+  "directory": "/home/maars/Code/cpp/frida-imgui-android/build",
+  "command": "/usr/bin/c++ -Dimgui_EXPORTS -I/home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui -I\"/sysroot/usr/include/*\" -I/sources/android/native_app_glue -g -fPIC -std=c++11 -o CMakeFiles/imgui.dir/src/cpp/imgui/imgui_tables.cpp.o -c /home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui/imgui_tables.cpp",
+  "file": "/home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui/imgui_tables.cpp"
+},
+{
+  "directory": "/home/maars/Code/cpp/frida-imgui-android/build",
+  "command": "/usr/bin/c++ -Dimgui_EXPORTS -I/home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui -I\"/sysroot/usr/include/*\" -I/sources/android/native_app_glue -g -fPIC -std=c++11 -o CMakeFiles/imgui.dir/src/cpp/imgui/imgui_widgets.cpp.o -c /home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui/imgui_widgets.cpp",
+  "file": "/home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui/imgui_widgets.cpp"
+},
+{
+  "directory": "/home/maars/Code/cpp/frida-imgui-android/build",
+  "command": "/usr/bin/c++ -Dimgui_EXPORTS -I/home/maars/Code/cpp/frida-imgui-android/src/cpp/imgui -I\"/sysroot/usr/include/*\" -I/sources/android/native_app_glue -g -fPIC -std=c++11 -o CMakeFiles/imgui.dir/src/cpp/main.cpp.o -c /home/maars/Code/cpp/frida-imgui-android/src/cpp/main.cpp",
+  "file": "/home/maars/Code/cpp/frida-imgui-android/src/cpp/main.cpp"
+}
+]
