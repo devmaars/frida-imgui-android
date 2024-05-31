@@ -1,8 +1,11 @@
 /node_modules
 /.vscode
 /dist
-/tmp
+/temp
 
 !/build/*/
 /build/*/*
 !/build/*/*.so
+
+!/build/dexfile/*.dex
+# *.class
