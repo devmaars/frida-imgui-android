@@ -36,8 +36,6 @@ async function main() {
     const viewGroup = Java.cast(this.getWindow().getDecorView().getRootView(), Java.use('android.view.ViewGroup'));
     viewGroup.addView(glSurfaceView);
 
-    const view = this.getWindow().getDecorView().getRootView();
-
     rendererSet = true;
   };
 }
