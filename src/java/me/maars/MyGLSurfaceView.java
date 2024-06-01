@@ -5,6 +5,7 @@ import android.opengl.GLSurfaceView;
 import android.util.Log;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+import android.view.MotionEvent;
 
 import static android.graphics.PixelFormat.TRANSPARENT;
 
@@ -50,6 +51,13 @@ public class MyGLSurfaceView extends GLSurfaceView implements GLSurfaceView.Rend
         Log.d(TAG, "onDrawFrame");
 
         nativeOnDrawFrame();
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        Log.d(TAG, "onTouchEvent");
+
+        return handleTouch(event.getX(), event.getY(), event.getAction());
     }
 
     public static native void nativeOnDrawFrame();

@@ -52,6 +52,28 @@ extern "C"
     {
         LOGD("handleTouch");
 
+        if (!g_Initialized)
+            return true;
+
+        ImGuiIO &io = ImGui::GetIO();
+
+        switch (action)
+        {
+        case 0: // ACTION_DOWN
+            io.AddMousePosEvent(x, y);
+            io.AddMouseButtonEvent(0, true);
+            break;
+        case 1: // ACTION_UP
+            io.AddMouseButtonEvent(0, false);
+            io.AddMousePosEvent(-1, -1);
+            break;
+        case 2: // ACTION_MOVE
+            io.AddMousePosEvent(x, y);
+            break;
+        }
+        if (io.WantCaptureMouse)
+            return false;
+
         return true;
     }
 
