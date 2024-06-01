@@ -1,15 +1,10 @@
 #include <jni.h>
 #include <android/log.h>
-#include <android/native_window_jni.h>
 #include "imgui.h"
 #include "imgui_impl_android.h"
 #include "imgui_impl_opengl3.h"
-#include <stdexcept>
 #include <EGL/egl.h>
-#include <android_native_app_glue.h>
 #include <GLES3/gl3.h>
-#include <pthread.h>
-#include <unistd.h>
 
 #define LOG_TAG "ImGuiWrapper"
 #define LOGD(...) ((void)__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__))
@@ -17,262 +12,155 @@
 #define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__))
 #define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__))
 
-static EGLDisplay g_EglDisplay = EGL_NO_DISPLAY;
-static EGLSurface g_EglSurface = EGL_NO_SURFACE;
-static EGLContext g_EglContext = EGL_NO_CONTEXT;
-static bool show_demo_window = true;
-static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+static void setup();
+static void renderFrame();
 
 static bool g_Initialized = false;
 
-void draw();
-
 extern "C"
 {
-
-    JNIEXPORT void JNICALL Java_me_maars_MyGLSurfaceView_nativeSurfaceCreated(JNIEnv *env, jobject thiz, jobject surface)
+    JNIEXPORT void JNICALL Java_me_maars_MyGLSurfaceView_nativeOnDrawFrame(JNIEnv *env, jclass clazz)
     {
-        LOGD("nativeSurfaceCreated called");
+        LOGD("nativeOnDrawFrame");
 
-        ANativeWindow *window = ANativeWindow_fromSurface(env, surface);
-        if (window == nullptr)
-        {
-            LOGE("Failed to get ANativeWindow from surface");
+        if (!g_Initialized)
             return;
-        }
 
-        LOGD("Window created successfully");
-
-        g_EglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-        if (g_EglDisplay == EGL_NO_DISPLAY)
-        {
-            LOGE("eglGetDisplay(EGL_DEFAULT_DISPLAY) returned EGL_NO_DISPLAY");
-            return;
-        }
-
-        if (eglInitialize(g_EglDisplay, 0, 0) != EGL_TRUE)
-        {
-            LOGE("eglInitialize() returned with an error");
-            return;
-        }
-
-        const EGLint egl_attributes[] = {
-            EGL_BLUE_SIZE, 8,
-            EGL_GREEN_SIZE, 8,
-            EGL_RED_SIZE, 8,
-            EGL_DEPTH_SIZE, 24,
-            EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-            EGL_NONE};
-
-        EGLint num_configs = 0;
-        if (eglChooseConfig(g_EglDisplay, egl_attributes, nullptr, 0, &num_configs) != EGL_TRUE || num_configs == 0)
-        {
-            LOGE("eglChooseConfig() failed");
-            return;
-        }
-
-        EGLConfig egl_config;
-        if (eglChooseConfig(g_EglDisplay, egl_attributes, &egl_config, 1, &num_configs) != EGL_TRUE || num_configs == 0)
-        {
-            LOGE("Failed to choose EGL config");
-            return;
-        }
-
-        EGLint egl_format;
-        eglGetConfigAttrib(g_EglDisplay, egl_config, EGL_NATIVE_VISUAL_ID, &egl_format);
-        ANativeWindow_setBuffersGeometry(window, 0, 0, egl_format);
-
-        const EGLint egl_context_attributes[] = {EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE};
-        g_EglContext = eglCreateContext(g_EglDisplay, egl_config, EGL_NO_CONTEXT, egl_context_attributes);
-        if (g_EglContext == EGL_NO_CONTEXT)
-        {
-            LOGE("eglCreateContext() returned EGL_NO_CONTEXT");
-            return;
-        }
-
-        g_EglSurface = eglCreateWindowSurface(g_EglDisplay, egl_config, reinterpret_cast<EGLNativeWindowType>(window), nullptr);
-        if (g_EglSurface == EGL_NO_SURFACE)
-        {
-            LOGE("eglCreateWindowSurface() returned EGL_NO_SURFACE");
-            return;
-        }
-
-        if (eglMakeCurrent(g_EglDisplay, g_EglSurface, g_EglSurface, g_EglContext) != EGL_TRUE)
-        {
-            LOGE("eglMakeCurrent() failed");
-            return;
-        }
-
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-
-        ImGuiIO &io = ImGui::GetIO();
-        io.IniFilename = nullptr;
-
-        // set imgui display size
-        io.DisplaySize = ImVec2(ANativeWindow_getWidth(window), ANativeWindow_getHeight(window));
-        glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-
-        LOGD("ImGui version: %s", IMGUI_VERSION);
-        LOGD("Display size: %f, %f", io.DisplaySize.x, io.DisplaySize.y);
-
-        ImGui::StyleColorsDark();
-
-        if (!ImGui_ImplAndroid_Init(window) || !ImGui_ImplOpenGL3_Init("#version 300 es"))
-        {
-            LOGE("ImGui_ImplAndroid_Init or ImGui_ImplOpenGL3_Init failed");
-            return;
-        }
-
-        ImFontConfig font_cfg;
-        font_cfg.SizePixels = 22.0f;
-        io.Fonts->AddFontDefault(&font_cfg);
-        ImGui::GetStyle().ScaleAllSizes(3.0f);
-
-        LOGD("ImGui initialized successfully");
-
-        g_Initialized = true;
+        renderFrame();
     }
 
-    // JNIEXPORT void JNICALL Java_me_maars_MyGLRenderer_nativeOnDrawFrame(JNIEnv *env, jobject thiz)
-    // {
-    //     LOGD("nativeOnDrawFrame called");
-
-    //     if (g_EglDisplay == EGL_NO_DISPLAY)
-    //     {
-    //         LOGD("g_EglDisplay is EGL_NO_DISPLAY");
-    //         return;
-    //     }
-
-    //     ImGuiIO &io = ImGui::GetIO();
-    //     ImGui_ImplOpenGL3_NewFrame();
-    //     ImGui_ImplAndroid_NewFrame();
-    //     ImGui::NewFrame();
-
-    //     if (show_demo_window)
-    //         ImGui::ShowDemoWindow(&show_demo_window);
-
-    //     ImGui::Begin("Hello, world!");
-    //     ImGui::Text("This is some useful text.");
-    //     ImGui::Checkbox("Demo Window", &show_demo_window);
-    //     ImGui::End();
-
-    //     ImGui::Render();
-    //     glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-    //     glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-    //     glClear(GL_COLOR_BUFFER_BIT);
-    //     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    //     eglSwapBuffers(g_EglDisplay, g_EglSurface);
-    // }
-
-    JNIEXPORT void JNICALL Java_me_maars_MyGLRenderer_nativeOnSurfaceChanged(JNIEnv *env, jobject thiz, jint width, jint height)
+    JNIEXPORT void JNICALL Java_me_maars_MyGLSurfaceView_nativeOnSurfaceChanged(JNIEnv *env, jclass clazz, jint width, jint height)
     {
-        LOGD("nativeOnSurfaceChanged called with width=%d, height=%d", width, height);
+        LOGD("nativeOnSurfaceChanged");
 
-        if (g_EglDisplay == EGL_NO_DISPLAY)
-        {
-            LOGD("g_EglDisplay is EGL_NO_DISPLAY");
+        if (!g_Initialized)
             return;
-        }
 
         ImGuiIO &io = ImGui::GetIO();
-        io.DisplaySize = ImVec2(width, height);
-        glViewport(0, 0, width, height);
+        io.DisplaySize = ImVec2((float)width, (float)height);
     }
 
-    JNIEXPORT void JNICALL Java_me_maars_MyGLSurfaceView_nativeSurfaceDestroyed(JNIEnv *env, jobject thiz)
+    JNIEXPORT void JNICALL Java_me_maars_MyGLSurfaceView_nativeOnSurfaceCreated(JNIEnv *env, jclass clazz)
     {
-        LOGD("nativeSurfaceDestroyed called");
+        LOGD("nativeOnSurfaceCreated");
 
-        if (g_EglDisplay != EGL_NO_DISPLAY)
-        {
-            eglMakeCurrent(g_EglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-            if (g_EglContext != EGL_NO_CONTEXT)
-            {
-                eglDestroyContext(g_EglDisplay, g_EglContext);
-            }
-            if (g_EglSurface != EGL_NO_SURFACE)
-            {
-                eglDestroySurface(g_EglDisplay, g_EglSurface);
-            }
-            eglTerminate(g_EglDisplay);
-        }
+        if (!g_Initialized)
+            setup();
+    }
 
-        g_EglDisplay = EGL_NO_DISPLAY;
-        g_EglContext = EGL_NO_CONTEXT;
-        g_EglSurface = EGL_NO_SURFACE;
-        ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplAndroid_Shutdown();
-        ImGui::DestroyContext();
+    JNIEXPORT jboolean JNICALL Java_me_maars_MyGLSurfaceView_handleTouch(JNIEnv *env, jclass clazz, jfloat x, jfloat y, jint action)
+    {
+        LOGD("handleTouch");
+
+        return true;
     }
 
 } // extern "C"
 
-pthread_t mainLoopThread;
-bool running = true;
-
-void *mainLoop(void *arg)
+static void setup()
 {
-    while (running)
-    {
-        LOGD("Main loop running...");
-        draw();
-        sleep(1);
-    }
-    return nullptr;
+    LOGD("setup");
+
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO &io = ImGui::GetIO();
+
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+    // ImGui::StyleColorsLight();
+
+    // Setup Platform/Renderer backends
+    ImGui_ImplAndroid_Init(nullptr);
+    ImGui_ImplOpenGL3_Init("#version 300 es");
+
+    ImFontConfig font_cfg;
+    font_cfg.SizePixels = 22.0f;
+    io.Fonts->AddFontDefault(&font_cfg);
+
+    // Arbitrary scale-up
+    // FIXME: Put some effort into DPI awareness
+    ImGui::GetStyle().ScaleAllSizes(3.0f);
+    io.FontGlobalScale = 1.2f;
+
+    g_Initialized = true;
+
+    LOGD("setup done");
 }
 
-void draw()
-{
-    if (!g_Initialized)
-    {
-        LOGD("g_Initialized is false");
-        return;
-    }
+static bool show_demo_window = true;
+static bool show_another_window = false;
+static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    if (g_EglDisplay == EGL_NO_DISPLAY)
-    {
-        LOGD("g_EglDisplay is EGL_NO_DISPLAY");
-        return;
-    }
+static void renderFrame()
+{
+    LOGD("renderFrame");
 
     ImGuiIO &io = ImGui::GetIO();
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplAndroid_NewFrame();
-    ImGui::NewFrame();
 
+    LOGD("DisplaySize: %f, %f", io.DisplaySize.x, io.DisplaySize.y);
+
+    // Start the Dear ImGui frame
+    ImGui_ImplOpenGL3_NewFrame();
+    LOGD("ImGui_ImplOpenGL3_NewFrame done");
+
+    ImGui_ImplAndroid_NewFrame((int)io.DisplaySize.x, (int)io.DisplaySize.y);
+    LOGD("ImGui_ImplAndroid_NewFrame done");
+
+    ImGui::NewFrame();
+    LOGD("ImGui::NewFrame done");
+
+    LOGD("Start rendering...");
+
+    // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
     if (show_demo_window)
         ImGui::ShowDemoWindow(&show_demo_window);
 
-    ImGui::Begin("Hello, world!");
-    ImGui::Text("This is some useful text.");
-    ImGui::Checkbox("Demo Window", &show_demo_window);
-    ImGui::End();
-
-    ImGui::Render();
-    glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-    glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-    glClear(GL_COLOR_BUFFER_BIT);
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    eglSwapBuffers(g_EglDisplay, g_EglSurface);
-
-    LOGD("Drawn frame");
-}
-
-extern "C" JNIEXPORT jint JNICALL
-JNI_OnLoad(JavaVM *vm, void *reserved)
-{
-    LOGD("JNI_OnLoad called");
-
-    JNIEnv *env;
-    if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK)
+    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
     {
-        return -1;
+        static float f = 0.0f;
+        static int counter = 0;
+
+        ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
+
+        ImGui::Text(
+            "This is some useful text."); // Display some text (you can use a format strings too)
+        ImGui::Checkbox("Demo Window",
+                        &show_demo_window); // Edit bools storing our window open/close state
+        ImGui::Checkbox("Another Window", &show_another_window);
+
+        ImGui::SliderFloat("float", &f, 0.0f,
+                           1.0f); // Edit 1 float using a slider from 0.0f to 1.0f
+        ImGui::ColorEdit3("clear color",
+                          (float *)&clear_color); // Edit 3 floats representing a color
+
+        if (ImGui::Button(
+                "Button")) // Buttons return true when clicked (most widgets return true when edited/activated)
+            counter++;
+        ImGui::SameLine();
+        ImGui::Text("counter = %d", counter);
+
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate,
+                    io.Framerate);
+        ImGui::End();
     }
 
-    LOGD("JNI_OnLoad: Got JNIEnv");
+    // 3. Show another simple window.
+    if (show_another_window)
+    {
+        ImGui::Begin("Another Window",
+                     &show_another_window); // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+        ImGui::Text("Hello from another window!");
+        if (ImGui::Button("Close Me"))
+            show_another_window = false;
+        ImGui::End();
+    }
 
-    pthread_create(&mainLoopThread, nullptr, mainLoop, nullptr);
-
-    return JNI_VERSION_1_6;
+    // Rendering
+    ImGui::Render();
+    glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+    // glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w,
+    //              clear_color.z * clear_color.w, clear_color.w);
+    glClear(GL_COLOR_BUFFER_BIT);
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
