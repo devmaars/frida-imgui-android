@@ -35,16 +35,12 @@ async function main() {
     log('Activity.onCreate()');
     this.onCreate(savedInstanceState);
 
-  // const intent = Intent.$new(this, MyGLActivity.class);
-  // this.startActivity(intent);
-
     // Check OpenGL ES version before creating GLSurfaceView
-    // if (!supportsOpenGLES3()) {
-    //   console.error("This device does not support OpenGL ES 3.0");
-    //   return;
-    // }
+    if (!supportsOpenGLES3()) {
+      console.error("This device does not support OpenGL ES 3.0");
+      return;
+    }
 
- 
     const params = WindowManager$LayoutParams.$new(
       ViewGroup$LayoutParams.MATCH_PARENT.value,
       ViewGroup$LayoutParams.MATCH_PARENT.value,
@@ -60,15 +56,16 @@ async function main() {
     glSurfaceView = Java.retain(glSurfaceView);
     console.log(glSurfaceView)
 
-      // const wm = Java.cast(
-      //   this.getSystemService(Context.WINDOW_SERVICE.value),
-      //   Java.use('android.view.ViewManager'),
-      // );
+      const wm = Java.cast(
+        this.getSystemService(Context.WINDOW_SERVICE.value),
+        Java.use('android.view.ViewManager'),
+      );
       
-      // wm.addView(glSurfaceView, params);
+      wm.addView(glSurfaceView, params);
 
-    const viewGroup = Java.cast(this.getWindow().getDecorView().getRootView(), Java.use('android.view.ViewGroup'));
-    viewGroup.addView(glSurfaceView);
+      // This also work if you dont want to use WindowManager
+    // const viewGroup = Java.cast(this.getWindow().getDecorView().getRootView(), Java.use('android.view.ViewGroup'));
+    // viewGroup.addView(glSurfaceView);
 
     rendererSet = true;
   };
