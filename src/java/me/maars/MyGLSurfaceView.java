@@ -1,7 +1,9 @@
 package me.maars;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.Context;
+import android.content.pm.ConfigurationInfo;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -9,9 +11,12 @@ import javax.microedition.khronos.opengles.GL10;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.WindowManager;
+import android.view.WindowManager.LayoutParams;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.app.AlertDialog;
+import android.os.Process;
 
 import static android.view.WindowManager.LayoutParams;
 import static android.graphics.PixelFormat.TRANSLUCENT;
@@ -37,10 +42,28 @@ public class MyGLSurfaceView extends GLSurfaceView implements GLSurfaceView.Rend
 
         Log.d(TAG, "MyGLSurfaceView");
 
+        if (!supportsOpenGLES3(ctx)) {
+            Log.e(TAG, "OpenGL ES 3.0 not supported on this device");
+
+            new AlertDialog.Builder(ctx)
+                    .setTitle("Error")
+                    .setMessage("This device does not support OpenGL ES 3.0")
+                    .setPositiveButton("Exit", (dialog, which) -> {
+                        ((Activity) ctx).finish();
+                        Process.killProcess(Process.myPid());
+                    }).setOnDismissListener(dialog -> {
+                        ((Activity) ctx).finish();
+                        Process.killProcess(Process.myPid());
+                    })
+                    .show();
+
+            return;
+        }
+
         setEGLContextClientVersion(3);
         setEGLConfigChooser(8, 8, 8, 8, 16, 0);
         getHolder().setFormat(TRANSPARENT);
-        setZOrderOnTop(true);
+        setZOrderOnTop(false);
         setRenderer(this);
 
         startMenu(ctx);
@@ -98,6 +121,7 @@ public class MyGLSurfaceView extends GLSurfaceView implements GLSurfaceView.Rend
 
         // check if the view is already added
         if (getParent() != null) {
+            Log.d(TAG, "View already added");
             return;
         }
 
@@ -112,6 +136,12 @@ public class MyGLSurfaceView extends GLSurfaceView implements GLSurfaceView.Rend
         params.gravity = Gravity.TOP | Gravity.CENTER_VERTICAL | Gravity.CENTER_HORIZONTAL;
 
         wm.addView(this, params);
+    }
+
+    public boolean supportsOpenGLES3(Context ctx) {
+        ActivityManager am = (ActivityManager) ctx.getSystemService(Context.ACTIVITY_SERVICE);
+        ConfigurationInfo configurationInfo = am.getDeviceConfigurationInfo();
+        return (configurationInfo.reqGlEsVersion >= 0x30000);
     }
 
     private static native void nativeOnDrawFrame();
