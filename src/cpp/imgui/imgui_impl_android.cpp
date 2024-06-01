@@ -387,13 +387,13 @@ void ImGui_ImplAndroid_Shutdown()
     io.BackendPlatformName = nullptr;
 }
 
-void ImGui_ImplAndroid_NewFrame(int width, int height)
+void ImGui_ImplAndroid_NewFrame()
 {
     ImGuiIO &io = ImGui::GetIO();
 
     // Setup display size (every frame to accommodate for window resizing)
-    int32_t window_width = g_Window ? ANativeWindow_getWidth(g_Window) : width;
-    int32_t window_height = g_Window ? ANativeWindow_getHeight(g_Window) : height;
+    int32_t window_width = ANativeWindow_getWidth(g_Window);
+    int32_t window_height = ANativeWindow_getHeight(g_Window);
     int display_width = window_width;
     int display_height = window_height;
 
