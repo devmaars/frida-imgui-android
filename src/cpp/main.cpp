@@ -14,9 +14,14 @@
 #define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__))
 #define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__))
 
-static void renderFrame();
-
 static bool g_Initialized = false;
+static bool show_demo_window = true;
+static bool show_another_window = false;
+static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+extern "C" void beginFrame();
+extern "C" void renderFrame();
+extern "C" void endFrame();
 
 extern "C"
 {
@@ -27,7 +32,9 @@ extern "C"
         if (!g_Initialized)
             return;
 
+        beginFrame();
         renderFrame();
+        endFrame();
     }
 
     JNIEXPORT void JNICALL Java_me_maars_MyGLSurfaceView_nativeOnSurfaceChanged(JNIEnv *env, jclass clazz, jint width, jint height)
@@ -114,29 +121,37 @@ extern "C"
 
 } // extern "C"
 
-static bool show_demo_window = true;
-static bool show_another_window = false;
-static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-static void renderFrame()
+void beginFrame()
 {
-    LOGD("renderFrame");
-
     ImGuiIO &io = ImGui::GetIO();
 
+    LOGD("Start rendering...");
     LOGD("DisplaySize: %f, %f", io.DisplaySize.x, io.DisplaySize.y);
 
-    // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
-    LOGD("ImGui_ImplOpenGL3_NewFrame done");
-
     ImGui_ImplAndroid_NewFrame();
-    LOGD("ImGui_ImplAndroid_NewFrame done");
-
     ImGui::NewFrame();
-    LOGD("ImGui::NewFrame done");
+}
 
-    LOGD("Start rendering...");
+void endFrame()
+{
+    ImGuiIO &io = ImGui::GetIO();
+
+    ImGui::Render();
+    glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+    glClear(GL_COLOR_BUFFER_BIT);
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+/*
+    * ImGui rendering
+     Render frame is meant to be hooked from frida
+     So that we can can render ImGui frame from frida
+     By default, it will render a simple demo frame
+ */
+void renderFrame()
+{
+    LOGD("renderFrame");
 
     // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
     if (show_demo_window)
@@ -146,6 +161,8 @@ static void renderFrame()
     {
         static float f = 0.0f;
         static int counter = 0;
+
+        ImGuiIO &io = ImGui::GetIO();
 
         ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
 
@@ -181,12 +198,4 @@ static void renderFrame()
             show_another_window = false;
         ImGui::End();
     }
-
-    // Rendering
-    ImGui::Render();
-    glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-    // glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w,
-    //              clear_color.z * clear_color.w, clear_color.w);
-    glClear(GL_COLOR_BUFFER_BIT);
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
