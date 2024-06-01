@@ -5,6 +5,8 @@
 #include "imgui_impl_opengl3.h"
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
+#include <android/native_window.h>
+#include <android/native_window_jni.h>
 
 #define LOG_TAG "ImGuiWrapper"
 #define LOGD(...) ((void)__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__))
@@ -12,7 +14,6 @@
 #define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__))
 #define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__))
 
-static void setup();
 static void renderFrame();
 
 static bool g_Initialized = false;
@@ -40,12 +41,45 @@ extern "C"
         io.DisplaySize = ImVec2((float)width, (float)height);
     }
 
-    JNIEXPORT void JNICALL Java_me_maars_MyGLSurfaceView_nativeOnSurfaceCreated(JNIEnv *env, jclass clazz)
+    JNIEXPORT void JNICALL Java_me_maars_MyGLSurfaceView_nativeOnSurfaceCreated(JNIEnv *env, jclass clazz, jobject surface)
     {
         LOGD("nativeOnSurfaceCreated");
 
-        if (!g_Initialized)
-            setup();
+        if (g_Initialized)
+            return;
+
+        ANativeWindow *window = ANativeWindow_fromSurface(env, surface);
+        if (!window)
+        {
+            LOGE("ANativeWindow_fromSurface failed");
+            return;
+        }
+
+        // Setup Dear ImGui context
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO &io = ImGui::GetIO();
+
+        // Setup Dear ImGui style
+        ImGui::StyleColorsDark();
+        // ImGui::StyleColorsLight();
+
+        // Setup Platform/Renderer backends
+        ImGui_ImplAndroid_Init(window);
+        ImGui_ImplOpenGL3_Init("#version 300 es");
+
+        ImFontConfig font_cfg;
+        font_cfg.SizePixels = 22.0f;
+        io.Fonts->AddFontDefault(&font_cfg);
+
+        // Arbitrary scale-up
+        // FIXME: Put some effort into DPI awareness
+        ImGui::GetStyle().ScaleAllSizes(3.0f);
+        io.FontGlobalScale = 1.2f;
+
+        g_Initialized = true;
+
+        LOGD("setup done");
     }
 
     JNIEXPORT jboolean JNICALL Java_me_maars_MyGLSurfaceView_handleTouch(JNIEnv *env, jclass clazz, jfloat x, jfloat y, jint action)
@@ -53,7 +87,7 @@ extern "C"
         LOGD("handleTouch");
 
         if (!g_Initialized)
-            return true;
+            return false;
 
         ImGuiIO &io = ImGui::GetIO();
 
@@ -70,45 +104,15 @@ extern "C"
         case 2: // ACTION_MOVE
             io.AddMousePosEvent(x, y);
             break;
-        }
-        if (io.WantCaptureMouse)
+        default:
             return false;
+            break;
+        }
 
-        return true;
+        return io.WantCaptureMouse ? true : false;
     }
 
 } // extern "C"
-
-static void setup()
-{
-    LOGD("setup");
-
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    // ImGui::StyleColorsLight();
-
-    // Setup Platform/Renderer backends
-    ImGui_ImplAndroid_Init(nullptr);
-    ImGui_ImplOpenGL3_Init("#version 300 es");
-
-    ImFontConfig font_cfg;
-    font_cfg.SizePixels = 22.0f;
-    io.Fonts->AddFontDefault(&font_cfg);
-
-    // Arbitrary scale-up
-    // FIXME: Put some effort into DPI awareness
-    ImGui::GetStyle().ScaleAllSizes(3.0f);
-    io.FontGlobalScale = 1.2f;
-
-    g_Initialized = true;
-
-    LOGD("setup done");
-}
 
 static bool show_demo_window = true;
 static bool show_another_window = false;
@@ -126,7 +130,7 @@ static void renderFrame()
     ImGui_ImplOpenGL3_NewFrame();
     LOGD("ImGui_ImplOpenGL3_NewFrame done");
 
-    ImGui_ImplAndroid_NewFrame((int)io.DisplaySize.x, (int)io.DisplaySize.y);
+    ImGui_ImplAndroid_NewFrame();
     LOGD("ImGui_ImplAndroid_NewFrame done");
 
     ImGui::NewFrame();
