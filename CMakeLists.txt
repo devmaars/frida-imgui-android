@@ -24,7 +24,6 @@ target_include_directories(imgui PRIVATE
     ${SRC}/*
     ${IMGUI_DIR}
     ${ANDROID_NDK}/sysroot/usr/include/*
-    ${ANDROID_NDK}/sources/android/native_app_glue
 )
 
 # Link libraries
