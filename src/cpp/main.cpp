@@ -6,8 +6,10 @@
 #include "imgui_impl_opengl3.h"
 #include <stdexcept>
 #include <EGL/egl.h>
-// #include <android_native_app_glue.h>
+#include <android_native_app_glue.h>
 #include <GLES3/gl3.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #define LOG_TAG "ImGuiWrapper"
 #define LOGD(...) ((void)__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__))
@@ -20,6 +22,10 @@ static EGLSurface g_EglSurface = EGL_NO_SURFACE;
 static EGLContext g_EglContext = EGL_NO_CONTEXT;
 static bool show_demo_window = true;
 static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+static bool g_Initialized = false;
+
+void draw();
 
 extern "C"
 {
@@ -103,6 +109,10 @@ extern "C"
         ImGuiIO &io = ImGui::GetIO();
         io.IniFilename = nullptr;
 
+        // set imgui display size
+        io.DisplaySize = ImVec2(ANativeWindow_getWidth(window), ANativeWindow_getHeight(window));
+        glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+
         LOGD("ImGui version: %s", IMGUI_VERSION);
         LOGD("Display size: %f, %f", io.DisplaySize.x, io.DisplaySize.y);
 
@@ -114,12 +124,50 @@ extern "C"
             return;
         }
 
+        ImFontConfig font_cfg;
+        font_cfg.SizePixels = 22.0f;
+        io.Fonts->AddFontDefault(&font_cfg);
+        ImGui::GetStyle().ScaleAllSizes(3.0f);
+
         LOGD("ImGui initialized successfully");
+
+        g_Initialized = true;
     }
 
-    JNIEXPORT void JNICALL Java_me_maars_MyGLRenderer_nativeOnDrawFrame(JNIEnv *env, jobject thiz)
+    // JNIEXPORT void JNICALL Java_me_maars_MyGLRenderer_nativeOnDrawFrame(JNIEnv *env, jobject thiz)
+    // {
+    //     LOGD("nativeOnDrawFrame called");
+
+    //     if (g_EglDisplay == EGL_NO_DISPLAY)
+    //     {
+    //         LOGD("g_EglDisplay is EGL_NO_DISPLAY");
+    //         return;
+    //     }
+
+    //     ImGuiIO &io = ImGui::GetIO();
+    //     ImGui_ImplOpenGL3_NewFrame();
+    //     ImGui_ImplAndroid_NewFrame();
+    //     ImGui::NewFrame();
+
+    //     if (show_demo_window)
+    //         ImGui::ShowDemoWindow(&show_demo_window);
+
+    //     ImGui::Begin("Hello, world!");
+    //     ImGui::Text("This is some useful text.");
+    //     ImGui::Checkbox("Demo Window", &show_demo_window);
+    //     ImGui::End();
+
+    //     ImGui::Render();
+    //     glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+    //     glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+    //     glClear(GL_COLOR_BUFFER_BIT);
+    //     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    //     eglSwapBuffers(g_EglDisplay, g_EglSurface);
+    // }
+
+    JNIEXPORT void JNICALL Java_me_maars_MyGLRenderer_nativeOnSurfaceChanged(JNIEnv *env, jobject thiz, jint width, jint height)
     {
-        LOGD("nativeOnDrawFrame called");
+        LOGD("nativeOnSurfaceChanged called with width=%d, height=%d", width, height);
 
         if (g_EglDisplay == EGL_NO_DISPLAY)
         {
@@ -128,29 +176,8 @@ extern "C"
         }
 
         ImGuiIO &io = ImGui::GetIO();
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplAndroid_NewFrame();
-        ImGui::NewFrame();
-
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
-
-        ImGui::Begin("Hello, world!");
-        ImGui::Text("This is some useful text.");
-        ImGui::Checkbox("Demo Window", &show_demo_window);
-        ImGui::End();
-
-        ImGui::Render();
-        // glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-        // glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-        // glClear(GL_COLOR_BUFFER_BIT);
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        // eglSwapBuffers(g_EglDisplay, g_EglSurface);
-    }
-
-    JNIEXPORT void JNICALL Java_me_maars_MyGLRenderer_nativeOnSurfaceChanged(JNIEnv *env, jobject thiz, jint width, jint height)
-    {
-        LOGD("nativeOnSurfaceChanged called with width=%d, height=%d", width, height);
+        io.DisplaySize = ImVec2(width, height);
+        glViewport(0, 0, width, height);
     }
 
     JNIEXPORT void JNICALL Java_me_maars_MyGLSurfaceView_nativeSurfaceDestroyed(JNIEnv *env, jobject thiz)
@@ -180,3 +207,72 @@ extern "C"
     }
 
 } // extern "C"
+
+pthread_t mainLoopThread;
+bool running = true;
+
+void *mainLoop(void *arg)
+{
+    while (running)
+    {
+        LOGD("Main loop running...");
+        draw();
+        sleep(1);
+    }
+    return nullptr;
+}
+
+void draw()
+{
+    if (!g_Initialized)
+    {
+        LOGD("g_Initialized is false");
+        return;
+    }
+
+    if (g_EglDisplay == EGL_NO_DISPLAY)
+    {
+        LOGD("g_EglDisplay is EGL_NO_DISPLAY");
+        return;
+    }
+
+    ImGuiIO &io = ImGui::GetIO();
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplAndroid_NewFrame();
+    ImGui::NewFrame();
+
+    if (show_demo_window)
+        ImGui::ShowDemoWindow(&show_demo_window);
+
+    ImGui::Begin("Hello, world!");
+    ImGui::Text("This is some useful text.");
+    ImGui::Checkbox("Demo Window", &show_demo_window);
+    ImGui::End();
+
+    ImGui::Render();
+    glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+    glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+    glClear(GL_COLOR_BUFFER_BIT);
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    eglSwapBuffers(g_EglDisplay, g_EglSurface);
+
+    LOGD("Drawn frame");
+}
+
+extern "C" JNIEXPORT jint JNICALL
+JNI_OnLoad(JavaVM *vm, void *reserved)
+{
+    LOGD("JNI_OnLoad called");
+
+    JNIEnv *env;
+    if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK)
+    {
+        return -1;
+    }
+
+    LOGD("JNI_OnLoad: Got JNIEnv");
+
+    pthread_create(&mainLoopThread, nullptr, mainLoop, nullptr);
+
+    return JNI_VERSION_1_6;
+}

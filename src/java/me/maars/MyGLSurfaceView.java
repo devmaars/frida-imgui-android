@@ -5,6 +5,7 @@ import android.content.Context;
 import android.opengl.GLSurfaceView;
 import android.view.Surface;
 import android.view.SurfaceHolder;
+import android.view.ViewGroup;
 import android.util.Log;
 
 public class MyGLSurfaceView extends GLSurfaceView {
@@ -12,7 +13,7 @@ public class MyGLSurfaceView extends GLSurfaceView {
     private final static String TMP_PATH = "/data/local/tmp";
     private final static String LIB_NAME = "libimgui.so";
 
-    private final MyGLRenderer renderer;
+    // private final MyGLRenderer renderer;
 
     static {
         System.load(TMP_PATH + "/" + LIB_NAME);
@@ -24,9 +25,9 @@ public class MyGLSurfaceView extends GLSurfaceView {
         Log.d(TAG, "MyGLSurfaceView constructor");
 
         setEGLContextClientVersion(3);
-        renderer = new MyGLRenderer();
-        setRenderer(renderer);
-        setRenderMode(RENDERMODE_CONTINUOUSLY); // Ensure continuous rendering
+        // renderer = new MyGLRenderer();
+        // setRenderer(renderer);
+        // setRenderMode(RENDERMODE_CONTINUOUSLY); // Ensure continuous rendering
     }
 
     @Override
@@ -45,6 +46,13 @@ public class MyGLSurfaceView extends GLSurfaceView {
         Log.d(TAG, "surfaceDestroyed");
 
         nativeSurfaceDestroyed();
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+
+        // Set the GLSurfaceView size to match the window size
     }
 
     public native void nativeSurfaceCreated(Surface surface);
